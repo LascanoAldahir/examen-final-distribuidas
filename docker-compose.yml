@@ -1,0 +1,109 @@
+services:
+  wordpress1:
+    image: wordpress:latest
+    container_name: nodo1
+    ports:
+      - "8081:80"
+    environment:
+      WORDPRESS_DB_HOST: base_master
+      WORDPRESS_DB_USER: root1
+      WORDPRESS_DB_PASSWORD: root1
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_TABLE_PREFIX: wp1_
+    volumes:
+      - ./DATA:/var/www/html
+    depends_on:
+      - base_master
+
+  wordpress2:
+    image: wordpress:latest
+    container_name: nodo2
+    ports:
+      - "8082:80"
+    environment:
+      WORDPRESS_DB_HOST: base_master
+      WORDPRESS_DB_USER: root1
+      WORDPRESS_DB_PASSWORD: root1  
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_TABLE_PREFIX: wp2_
+    volumes:
+      - ./DATA2:/var/www/html
+    depends_on:
+      - base_master
+
+  wordpress3:
+    image: wordpress:latest
+    container_name: nodo3
+    ports:
+      - "8083:80"
+    environment:
+      WORDPRESS_DB_HOST: base_master
+      WORDPRESS_DB_USER: root1
+      WORDPRESS_DB_PASSWORD: root1
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_TABLE_PREFIX: wp3_
+    volumes:
+      - ./DATA3:/var/www/html
+    depends_on:
+      - base_master
+
+  base_master:
+    image: mysql:5.7
+    container_name: base_master
+    ports:
+      - "3340:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root1
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: root1
+      MYSQL_PASSWORD: root1
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=wordpress
+    volumes:
+      - ./sqlbaseMaestro:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  
+  base_esclavo:
+    image: mysql:5.7
+    container_name: base_esclavo
+    ports:
+      - "3350:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root1
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: root1
+      MYSQL_PASSWORD: root1
+    volumes:
+      - ./sqlbaseEsclavo:/var/lib/mysql
+    depends_on:
+      - base_master
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: php1
+    ports:
+      - "8089:80"
+    environment:
+      PMA_HOSTS: "base_master, base_esclavo"
+      PMA_ARBITRARY: 1
+  
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: dockerfile
+    container_name: nginx
+    ports:
+      - "9090:80"
+    depends_on:
+      - wordpress1
+      - wordpress2
+      - wordpress3
+
+  locust:
+    image: locustio/locust
+    container_name: locust
+    ports:
+      - "8090:8089"
+    volumes:
+      - C:\Users\osmig\Desktop\examend:/mnt/locust
+    command: ["-f","/mnt/locust/locustfile.py"]
+# docker-compose up --build
