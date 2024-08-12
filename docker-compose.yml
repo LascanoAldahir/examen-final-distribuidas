@@ -72,8 +72,10 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: root1
       MYSQL_PASSWORD: root1
+    command: --server-id=2
     volumes:
       - ./sqlbaseEsclavo:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     depends_on:
       - base_master
 
